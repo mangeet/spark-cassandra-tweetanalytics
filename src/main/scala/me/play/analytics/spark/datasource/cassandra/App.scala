@@ -64,9 +64,7 @@ object App {
     }
     val retweet_count_user_filtered = retweet_count_user.filter { case (retweeted_count, user) => retweeted_count != 0 }
     val retweet_count_user_filtered_sorted = retweet_count_user_filtered.sortByKey(false, 2)
-    retweet_count_user_filtered_sorted.saveAsTextFile(s"$userhome/retweet_count_user_filtered_sorted")
-    println(retweet_count_user_filtered_sorted)
-    //println(retweet_count_user_filtered_sorted.first())
+    println(retweet_count_user_filtered_sorted.first())
   }
 
   /**
