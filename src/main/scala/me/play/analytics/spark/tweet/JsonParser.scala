@@ -13,6 +13,7 @@ object L extends CC[List[Any]]
 object S extends CC[String]
 object D extends CC[Double]
 object B extends CC[Boolean]
+object I extends CC[Int]
 
 object JsonParser {
   
@@ -27,6 +28,19 @@ object JsonParser {
       S(location) = user("location")
     } yield {
       (location, tweet)
+    } 
+  }
+  
+  def parseTweetJsonToGetRetweetedCountAndUserDetail(tweet: String): List[(Int, Map[String, Any])] = {
+    for {
+      Some(M(map)) <- List(JSON.parseFull(tweet))
+      
+      if map.contains("user")
+      M(user) = map("user")
+      
+      D(retweet_count) = map("retweet_count")
+    } yield {
+      (retweet_count.toInt, user)
     } 
   }
 }

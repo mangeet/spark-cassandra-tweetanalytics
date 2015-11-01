@@ -5,7 +5,9 @@ import org.apache.spark.SparkContext
 import com.datastax.spark.connector._
 import java.nio.ByteBuffer
 import org.apache.spark.storage.StorageLevel
-import me.play.analytics.spark.tweet.JsonParser.parseTweetJson
+import me.play.analytics.spark.tweet.JsonParser.{ parseTweetJson, parseTweetJsonToGetRetweetedCountAndUserDetail }
+import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.MapPartitionsRDD
 
 /**
  * @author mangeeteden
@@ -45,12 +47,26 @@ object App {
     val sortedlocation_tweetcount = location_tweetcount.sortByKey(false)
     val userhome = System.getProperty("user.home")
     location_tweetcount.saveAsTextFile(s"$userhome/sortedlocation_tweetcount")
-    
-    
+
     // locations(Top 5) with max tweets
     val sortedtweetcount_location = location_tweetcount.map(item => item.swap).sortByKey(false)
     println("Top 5 location of max Tweets:")
     sortedtweetcount_location.top(5).map(item => item.swap).foreach(println)
+
+    // User details with Max ReTweeted
+    val retweet_count_user = location_tweet_pairRDD.map {
+      case (location, user) =>
+        val parsedResponse = parseTweetJsonToGetRetweetedCountAndUserDetail(user)
+        parsedResponse match {
+          case Nil => (0, user)
+          case _   => parsedResponse(0)
+        }
+    }
+    val retweet_count_user_filtered = retweet_count_user.filter { case (retweeted_count, user) => retweeted_count != 0 }
+    val retweet_count_user_filtered_sorted = retweet_count_user_filtered.sortByKey(false, 2)
+    retweet_count_user_filtered_sorted.saveAsTextFile(s"$userhome/retweet_count_user_filtered_sorted")
+    println(retweet_count_user_filtered_sorted)
+    //println(retweet_count_user_filtered_sorted.first())
   }
 
   /**
