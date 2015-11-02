@@ -27,4 +27,4 @@ Steps to Get-Started #
 
 4.  mvn package
 
-5. ./bin/spark-submit --executor-memory=2g  --class me.play.analytics.spark.datasource.cassandra.App <WORKSPACE>/spark-cassandra-analytics/target/spark-cassandra-analytics-0.0.1-SNAPSHOT.jar
+5. ./bin/spark-submit --executor-memory=2g  --class me.play.analytics.spark.datasource.cassandra.TweetAnalytics <WORKSPACE>/spark-cassandra-analytics/target/spark-cassandra-analytics-0.0.1-SNAPSHOT.jar

@@ -8,14 +8,36 @@ import org.apache.spark.storage.StorageLevel
 import me.play.analytics.spark.tweet.JsonParser.{ parseTweetJson, parseTweetJsonToGetRetweetedCountAndUserDetail }
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.MapPartitionsRDD
+import com.sun.xml.internal.ws.wsdl.writer.document.Import
 
 /**
  * @author mangeeteden
  */
-object App {
+
+// Constants
+object Constant {
+
+  val APP_NAME = "Spark-Tweets-Analytics"
+  val LOCATION_NOT_AVIALABLE = "LocNA"
+  
+  val CASSANDRA_HOST_KEY = "spark.cassandra.connection.host"
+  val CASSANDRA_HOST_VALUE = "127.0.0.1"
+  val CASSANDRA_KEYSPACE_NAME  = "play"
+  val CASSANDRA_TABLE_NAME  = "tweets"
+  
+  val USER_HOME = System.getProperty("user.home")
+}
+
+/**
+ * 1. Connects to Cassandra Cluster.
+ * 2. Gets the CassandraRowRDD
+ * 3. Parse the Tweets JSON to prepare PairRDD -> RDD[(location, tweet)]
+ * 4. Perform the Anaylysis listed in README.md
+ */
+object TweetAnalytics {
 
   def main(args: Array[String]): Unit = {
-
+    
     // setting Spark Configurations
     val sc = initSparkContext()
 
@@ -26,11 +48,11 @@ object App {
     val location_tweet_pairRDD = tweets.map { tweet =>
       val parsedResponse = parseTweetJson(tweet)
       parsedResponse match {
-        case Nil => ("Loc NA", tweet)
+        case Nil => (Constant.LOCATION_NOT_AVIALABLE, tweet)
         case _ =>
           val parsedTuple = parsedResponse(0)
           parsedTuple match {
-            case (location, tweet) if location == null || location.isEmpty() => ("Loc NA", tweet)
+            case (location, tweet) if location == null || location.isEmpty() => (Constant.LOCATION_NOT_AVIALABLE, tweet)
             case _ => parsedTuple
           }
       }
@@ -45,8 +67,7 @@ object App {
     val location_tweetcount = location_initone.reduceByKey((a, b) => a + b)
     location_tweetcount.cache()
     val sortedlocation_tweetcount = location_tweetcount.sortByKey(false)
-    val userhome = System.getProperty("user.home")
-    location_tweetcount.saveAsTextFile(s"$userhome/sortedlocation_tweetcount")
+    location_tweetcount.saveAsTextFile(Constant.USER_HOME+"/sortedlocation_tweetcount")
 
     // locations(Top 5) with max tweets
     val sortedtweetcount_location = location_tweetcount.map(item => item.swap).sortByKey(false)
@@ -71,7 +92,7 @@ object App {
    * Initialize SparkContext with custom configurations.
    */
   def initSparkContext(): SparkContext = {
-    val conf = new SparkConf(true).setAppName("Spark-Tweets-Analytics").set("spark.cassandra.connection.host", "127.0.0.1")
+    val conf = new SparkConf(true).setAppName(Constant.APP_NAME).set(Constant.CASSANDRA_HOST_KEY, Constant.CASSANDRA_HOST_VALUE)
     new SparkContext(conf)
   }
 
@@ -79,7 +100,7 @@ object App {
    * Fetching tweets from Cassandra DB in for the raw text(Json).
    */
   def fetchDataFromCassandra(sc: SparkContext) = {
-    val data = sc.cassandraTable("play", "tweets")
+    val data = sc.cassandraTable(Constant.CASSANDRA_KEYSPACE_NAME, Constant.CASSANDRA_TABLE_NAME)
     data.map(row => new String(row.get[ByteBuffer]("tweet").array()))
   }
 

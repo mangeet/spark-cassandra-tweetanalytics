@@ -17,6 +17,9 @@ object I extends CC[Int]
 
 object JsonParser {
   
+  /**
+   * Parses the Tweet JSON and builds the Tuple of location and tweet itself (location, tweet)
+   */
   def parseTweetJson(tweet: String): List[(String, String)] = {
     for {
       Some(M(map)) <- List(JSON.parseFull(tweet))
@@ -31,6 +34,9 @@ object JsonParser {
     } 
   }
   
+  /**
+   * Parses the Tweet JSON and builds the Tuple of Retweet count and user info (retweet_count, user)
+   */
   def parseTweetJsonToGetRetweetedCountAndUserDetail(tweet: String): List[(Int, Map[String, Any])] = {
     for {
       Some(M(map)) <- List(JSON.parseFull(tweet))
