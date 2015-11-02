@@ -1,4 +1,4 @@
-# spark-cassandra-analytics
+# spark-cassandra-tweetanalytics
 
 This is continuation project of #spray-akka-tweetstreaming. Tweets that are saved in Cassandra DB using Akka + Spray will be analyzed using Spark's Cassandra RDD.
 
